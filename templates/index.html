@@ -1,0 +1,53 @@
+<style type="text/css">
+
+    th:tr{
+        color: blue;
+
+    }
+    tr:nth-of-type(2n){
+        border: 1px solid black;
+        background-color: rgba(150, 150, 150, 0.5);
+
+    }
+
+    td{
+        padding: 8px 8px;
+        border: 1px solid black;
+    }
+</style>
+
+<form method="post">
+  <p>搜索关键字: <input type="text" name="keyword" /></p>
+    <p>结果数量: <input type="text" name="top_k" /></p>
+  <input type="submit" value="搜索" />
+</form>
+
+{% if hits %}
+  结果:</br>
+
+  <table style="margin-left: 20px;">
+    <th>
+  <tr style="color: green; ">
+          <td>标题</td>
+          <td>详情</td>
+          <td>标签</td>
+          <td>缩略图</td>
+
+  </tr>
+      </th>
+
+  <!-- For loop logic of jinja template -->
+  {%for i in range(0, hits_size)%}
+
+  <!-- table rows -->
+    <tr>
+        <td>{{hits[i]['_source']['title']}}</td>
+        <td>{{hits[i]['_source']['content'][:50]+'......'}}</td>
+        <td>{{hits[i]['_source']['taglib']}}</td>
+      <td><img src={{hits[i]['_source']['img']}} height="75" width="75"></td>
+    </tr>
+
+  {%endfor%}
+    </table>
+
+{% endif %}
