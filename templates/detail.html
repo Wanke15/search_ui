@@ -1,0 +1,46 @@
+<style type="text/css">
+
+    th:tr{
+        color: blue;
+
+    }
+    tr:nth-of-type(2n){
+        border: 1px solid black;
+        background-color: rgba(150, 150, 150, 0.5);
+
+    }
+
+    td{
+        padding: 8px 8px;
+        border: 1px solid black;
+    }
+    .img-content ul{width:auto; margin:0 auto; padding:0}
+    .img-content ul li{display:inline-block}
+    .img-content ul li img{width:120px; height:120px; padding:0 10px}
+</style>
+
+<font color="blue">当前浏览：</font><br><br>
+<b>景点名字：</b>{{hits[0]['_source']['cn_name']}}<br>
+<b>景点城市：</b>{{hits[0]['_source']['city_cn']}}<br>
+<b>景点地址：</b>{{hits[0]['_source']['address']}}<br>
+<b>景点简介：</b>{{hits[0]['_source']['memo']}}<br>
+<img src={{hits[0]['_source']['pic']}} height="150" width="150">
+
+
+<br>
+<br>
+<font color="red">相似景点推荐：</font><br><br>
+
+<div class="img-content">
+    <ul>
+{%for i in range(1, recs_size)%}
+
+  <!-- table rows -->
+
+          <li>
+              <a href={{url_for('just_recommend', name=hits[i]['_source']['cn_name'])}}><img src={{recs[i]['pic']}}></a>
+              <figcaption align="center">{{hits[i]['_source']['cn_name']}}</figcaption>
+          </li>
+        {%endfor%}
+        </ul>
+</div>
