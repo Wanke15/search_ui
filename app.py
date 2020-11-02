@@ -3,6 +3,9 @@ from datetime import datetime
 from flask import Flask, jsonify, request, render_template, redirect, url_for, Response
 from elasticsearch import Elasticsearch
 
+import jieba_fast
+jieba_fast.initialize()
+
 # es = Elasticsearch(hosts='localhost:9292')
 es = Elasticsearch(hosts='http://portal.int.zuzuche.info:20019/')
 
@@ -30,20 +33,53 @@ def search():
         #     }
         # }
 
+        # body = {
+        #     "query": {
+        #         "match_phrase_prefix": {
+        #             "title": {
+        #                 "query": keyword
+        #             }
+        #         }
+        #     }
+        # }
+
+        should_queries = [{
+                            "match_phrase_prefix": {
+                                "title": {
+                                    "query": keyword
+                                }
+                            }
+                        }]
+        [should_queries.append({
+                            "match_phrase_prefix": {
+                                "title": {
+                                    "query": kw
+                                }
+                            }
+                        }) for kw in jieba_fast.lcut(keyword)]
+
         body = {
             "query": {
                 "bool": {
-                    "must": [
-                        {
-                            "query_string": {
-                                "query": keyword,
-                                "fields": ["title^10", "content"]
-                            }
-                        },
-                    ]
+                    "should": should_queries
                 }
             }
         }
+
+        # body = {
+        #     "query": {
+        #         "bool": {
+        #             "must": [
+        #                 {
+        #                     "query_string": {
+        #                         "query": keyword,
+        #                         "fields": ["title^10", "content"]
+        #                     }
+        #                 }
+        #             ]
+        #         }
+        #     }
+        # }
 
         res = es.search(index="zzc_home_page_data", body=body, size=hits_size)
         print(res['hits']['hits'])
@@ -70,19 +106,19 @@ def recommend():
 
 
 def inner_recommend(keyword, rec_size=3):
-        if not rec_size:
-            rec_size = 5
-        body = {
-            "query": {
-                "multi_match": {
-                    "query": keyword,
-                    "fields": ["cn_name^10", "py_name", "en_name^10", "memo", "address", "tags", "city_cn", "city_en"]
-                }
+    if not rec_size:
+        rec_size = 5
+    body = {
+        "query": {
+            "multi_match": {
+                "query": keyword,
+                "fields": ["cn_name^10", "py_name", "en_name^10", "memo", "address", "tags", "city_cn", "city_en"]
             }
         }
-        res = es.search(index="poi", body=body, size=rec_size+1)
-        recs = [{'pic': _r['_source']['pic'], 'cn_name': _r['_source']['cn_name']} for _r in res['hits']['hits']]
-        return recs, res
+    }
+    res = es.search(index="poi", body=body, size=rec_size + 1)
+    recs = [{'pic': _r['_source']['pic'], 'cn_name': _r['_source']['cn_name']} for _r in res['hits']['hits']]
+    return recs, res
 
 
 @app.route('/just_recommend/<name>', methods=['GET'])
@@ -94,7 +130,8 @@ def just_recommend(name, rec_size=5):
 
     recs, res = inner_recommend(keyword, recs_size)
 
-    return render_template('recommend.html', current_item=res['hits']['hits'][0]['_source'], recs_size=len(recs), recs=recs)
+    return render_template('recommend.html', current_item=res['hits']['hits'][0]['_source'], recs_size=len(recs),
+                           recs=recs)
 
 
 @app.route('/es_search', methods=['GET'])
